@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>leadscout</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; color: #222; }
+    h1 { font-size: 1.3rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; vertical-align: top; }
+    th { font-size: 0.8rem; text-transform: uppercase; color: #666; }
+    .score { font-weight: 600; }
+    .snippet { color: #555; font-size: 0.85rem; }
+    .toggle { float: right; font-size: 0.85rem; }
+    button { cursor: pointer; }
+    .empty { color: #888; padding: 2rem 0; }
+  </style>
+</head>
+<body>
+  <h1>leadscout — {{ "all leads (incl. dismissed)" if show_dismissed else "new leads" }}
+    <a class="toggle" href="/?show_dismissed={{ 0 if show_dismissed else 1 }}">
+      {{ "hide dismissed" if show_dismissed else "show dismissed" }}
+    </a>
+  </h1>
+  {% if not leads %}
+    <p class="empty">No leads yet.</p>
+  {% else %}
+  <table>
+    <tr><th>subreddit</th><th>post</th><th>score</th><th>reason</th><th></th></tr>
+    {% for lead in leads %}
+    <tr>
+      <td>r/{{ lead.subreddit }}</td>
+      <td>
+        <a href="{{ lead.permalink }}" target="_blank">{{ lead.title }}</a>
+        <div class="snippet">{{ lead.body_snippet[:200] }}</div>
+      </td>
+      <td class="score">{{ "%.2f"|format(lead.llm_score) }}</td>
+      <td>{{ lead.llm_reason }}</td>
+      <td>
+        {% if lead.status != "dismissed" %}
+        <form method="post" action="/dismiss/{{ lead.post_id }}">
+          <input type="hidden" name="show_dismissed" value="{{ 1 if show_dismissed else 0 }}">
+          <button type="submit">dismiss</button>
+        </form>
+        {% else %}dismissed{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</body>
+</html>
