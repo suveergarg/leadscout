@@ -113,6 +113,17 @@ def test_new_posts_respects_limit() -> None:
 
 
 @respx.mock
+def test_new_posts_builds_sort_time_filter_and_after_into_url() -> None:
+    route = respx.get(
+        "https://www.reddit.com/r/CAMPING/top/.rss",
+        params={"limit": "100", "t": "all", "after": "t3_abc123"},
+    ).mock(return_value=Response(200, text=_SELFPOST_FEED))
+    client = RssRedditClient(user_agent="test-agent")
+    client.new_posts("CAMPING", limit=100, sort="top", time_filter="all", after="t3_abc123")
+    assert route.called
+
+
+@respx.mock
 def test_new_posts_waits_out_rate_limit_before_next_request(monkeypatch) -> None:
     exhausted = Response(
         200,

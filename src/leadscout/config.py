@@ -14,6 +14,19 @@ DEFAULT_SUBREDDITS = [
     "CampingandHiking",
     "RVLiving",
     "backpacking",
+    # Verified live (not guessed - confirmed via real posts appearing in RSS results):
+    "hiking",
+    "AppalachianTrail",
+    "carcamping",
+    "JoshuaTree",
+    "overlanding",
+    "PacificCrestTrail",
+    "Ultralight",
+    "VanLife",
+    "WildernessBackpacking",
+    "yellowstone",
+    "grandcanyon",
+    "JMT",
 ]
 
 

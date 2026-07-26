@@ -142,9 +142,25 @@ class RssRedditClient:
         self._client = httpx.Client(headers={"User-Agent": user_agent}, timeout=15)
         self._sleep_until: float | None = None
 
-    def new_posts(self, subreddit: str, limit: int = 25) -> list[RedditPost]:
+    def new_posts(
+        self,
+        subreddit: str,
+        limit: int = 25,
+        sort: str = "new",
+        time_filter: str | None = None,
+        after: str | None = None,
+    ) -> list[RedditPost]:
+        """sort/time_filter/after exist for deep historical sweeps (see
+        scripts/benchmark_classifiers.py) - poll_once never sets them, so its
+        behavior is unchanged. `after` takes a fullname (e.g. "t3_abc123") - confirmed
+        live it pages a combined multireddit feed with ~1 post of overlap per 100."""
         self._wait_for_rate_limit()
-        resp = self._client.get(f"https://www.reddit.com/r/{subreddit}/new/.rss?limit={limit}")
+        params = f"limit={limit}"
+        if time_filter:
+            params += f"&t={time_filter}"
+        if after:
+            params += f"&after={after}"
+        resp = self._client.get(f"https://www.reddit.com/r/{subreddit}/{sort}/.rss?{params}")
         self._record_rate_limit(resp.headers)
         resp.raise_for_status()
         root = ElementTree.fromstring(resp.text)
