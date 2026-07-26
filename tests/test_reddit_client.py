@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from leadscout.reddit_client import RedditClient
+from leadscout.config import Settings
+from leadscout.reddit_client import RedditClient, RssRedditClient, build_reddit_client
 
 
 class _FakeSubredditFeed:
@@ -56,3 +57,15 @@ def test_new_posts_respects_limit() -> None:
     client = RedditClient(_FakeReddit([_submission(id="a"), _submission(id="b")]))
     posts = client.new_posts("CAMPING", limit=1)
     assert len(posts) == 1
+
+
+def test_build_reddit_client_falls_back_to_rss_with_no_credentials() -> None:
+    settings = Settings(reddit_client_id=None, reddit_client_secret=None)
+    client = build_reddit_client(settings)
+    assert isinstance(client, RssRedditClient)
+
+
+def test_build_reddit_client_uses_praw_with_credentials() -> None:
+    settings = Settings(reddit_client_id="id", reddit_client_secret="secret")
+    client = build_reddit_client(settings)
+    assert isinstance(client, RedditClient)

@@ -6,11 +6,11 @@ from leadscout.classify import Classifier
 from leadscout.config import Settings
 from leadscout.keywords import matched_phrase
 from leadscout.models import Lead
-from leadscout.reddit_client import RedditClient
+from leadscout.reddit_client import RedditFeed
 from leadscout.store import Store
 
 
-def poll_once(settings: Settings, client: RedditClient, classifier: Classifier, store: Store) -> int:
+def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, store: Store) -> int:
     """One pass over all configured subreddits. Returns count of new leads stored.
     A single subreddit's fetch failure is logged and skipped, not fatal to the pass."""
     new_leads = 0
