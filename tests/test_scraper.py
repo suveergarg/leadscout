@@ -50,11 +50,14 @@ def test_poll_once_skips_below_score_threshold(settings) -> None:
     assert store.list_leads() == []
 
 
-def test_poll_once_skips_no_keyword_match(settings) -> None:
+def test_poll_once_stores_high_score_lead_with_no_keyword_match(settings) -> None:
+    """No keyword pre-filter: a post with no matched phrase still gets classified
+    and stored if the LLM scores it highly. keyword_matched is recorded as None."""
     posts = [_post("a3", "Best tent for winter camping?")]
     store = SqliteStore(settings.db_path)
     found = poll_once(settings, _FakeClient(posts), _FakeClassifier(0.9), store)
-    assert found == 0
+    assert found == 1
+    assert store.list_leads()[0].keyword_matched is None
 
 
 def test_poll_once_skips_already_seen(settings) -> None:

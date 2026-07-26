@@ -12,7 +12,11 @@ from leadscout.store import Store
 
 def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, store: Store) -> int:
     """One pass over all configured subreddits. Returns count of new leads stored.
-    A single subreddit's fetch failure is logged and skipped, not fatal to the pass."""
+    A single subreddit's fetch failure is logged and skipped, not fatal to the pass.
+
+    No keyword pre-filter: every unseen post is classified directly. matched_phrase()
+    is still recorded on the lead (may be None) for comparison against the old
+    keyword-gated behavior, not used to skip classification."""
     new_leads = 0
     for subreddit in settings.subreddits:
         try:
@@ -24,8 +28,6 @@ def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, st
             if store.seen(post.post_id):
                 continue
             phrase = matched_phrase(post.title, post.body_snippet)
-            if phrase is None:
-                continue
             classification = classifier.classify(post)
             if classification.score < settings.min_llm_score:
                 continue

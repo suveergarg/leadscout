@@ -26,7 +26,7 @@ class Lead(BaseModel):
     author: str
     created_utc: float
     body_snippet: str
-    keyword_matched: str
+    keyword_matched: str | None = None
     llm_score: float
     llm_reason: str
     status: str = "new"
