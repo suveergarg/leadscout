@@ -85,9 +85,17 @@ def _parse_entry(entry: ElementTree.Element, subreddit: str) -> RedditPost:
     published = find_text("a:published") or find_text("a:updated")
     created_utc = datetime.fromisoformat(published).astimezone(timezone.utc).timestamp()
 
+    # Multireddit feeds (r/sub1+sub2/...) tag each entry with its real source via
+    # <category label="r/..."/>; single-subreddit feeds may omit it, so fall back to
+    # the subreddit the caller requested.
+    category_el = entry.find("a:category", _ATOM_NS)
+    entry_subreddit = (
+        category_el.get("label", "").removeprefix("r/") if category_el is not None else ""
+    )
+
     return RedditPost(
         post_id=post_id,
-        subreddit=subreddit,
+        subreddit=entry_subreddit or subreddit,
         title=find_text("a:title"),
         permalink=permalink,
         author=author,

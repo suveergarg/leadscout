@@ -38,6 +38,25 @@ _DELETED_AUTHOR_FEED = """<?xml version="1.0" encoding="UTF-8"?><feed xmlns="htt
 </entry>
 </feed>"""
 
+_MULTIREDDIT_FEED = """<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom">
+<entry>
+<category term="camping" label="r/camping"/>
+<content type="html">&lt;!-- SC_OFF --&gt;&lt;div class="md"&gt;&lt;p&gt;post in r/camping&lt;/p&gt;&lt;/div&gt;&lt;!-- SC_ON --&gt;</content>
+<id>t3_multi1</id>
+<link href="https://www.reddit.com/r/camping/comments/multi1/title/" />
+<updated>2026-07-26T19:00:00+00:00</updated>
+<title>From r/camping</title>
+</entry>
+<entry>
+<category term="Yosemite" label="r/Yosemite"/>
+<content type="html">&lt;!-- SC_OFF --&gt;&lt;div class="md"&gt;&lt;p&gt;post in r/Yosemite&lt;/p&gt;&lt;/div&gt;&lt;!-- SC_ON --&gt;</content>
+<id>t3_multi2</id>
+<link href="https://www.reddit.com/r/Yosemite/comments/multi2/title/" />
+<updated>2026-07-26T19:01:00+00:00</updated>
+<title>From r/Yosemite</title>
+</entry>
+</feed>"""
+
 
 @respx.mock
 def test_new_posts_parses_selftext_entry() -> None:
@@ -112,6 +131,20 @@ def test_new_posts_waits_out_rate_limit_before_next_request(monkeypatch) -> None
     client.new_posts("CAMPING")  # bucket was exhausted by the previous response
     assert len(sleep_calls) == 1
     assert 0 < sleep_calls[0] <= 38
+
+
+@respx.mock
+def test_new_posts_multireddit_attributes_each_post_to_its_real_subreddit() -> None:
+    respx.get("https://www.reddit.com/r/camping+Yosemite/new/.rss").mock(
+        return_value=Response(200, text=_MULTIREDDIT_FEED)
+    )
+    client = RssRedditClient(user_agent="test-agent")
+    posts = client.new_posts("camping+Yosemite", limit=25)
+
+    assert len(posts) == 2
+    by_id = {p.post_id: p for p in posts}
+    assert by_id["multi1"].subreddit == "camping"
+    assert by_id["multi2"].subreddit == "Yosemite"
 
 
 @respx.mock
