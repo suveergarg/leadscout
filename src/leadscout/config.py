@@ -25,7 +25,12 @@ class Settings(BaseSettings):
     db_path: str = "leadscout.db"
     subreddits: list[str] = Field(default_factory=lambda: list(DEFAULT_SUBREDDITS))
     poll_interval_seconds: int = 900
-    posts_per_subreddit: int = 25
+    # poll_once fetches every subreddit in one combined multireddit request (see
+    # reddit_client.combined_subreddits), not one request per subreddit - confirmed
+    # live that Reddit's RSS caps a response at 100 entries regardless of the limit
+    # requested or how many subreddits are combined, so this is a hard ceiling, not a
+    # per-subreddit budget.
+    fetch_limit: int = 100
     min_llm_score: float = 0.4
     # No-auth .json scraping is blocked outright by Reddit's edge (confirmed: 403 regardless
     # of network/UA) — read access goes through PRAW application-only OAuth instead. Register

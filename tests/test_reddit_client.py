@@ -3,7 +3,12 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from leadscout.config import Settings
-from leadscout.reddit_client import RedditClient, RssRedditClient, build_reddit_client
+from leadscout.reddit_client import (
+    RedditClient,
+    RssRedditClient,
+    build_reddit_client,
+    combined_subreddits,
+)
 
 
 class _FakeSubredditFeed:
@@ -30,6 +35,7 @@ def _submission(**overrides) -> SimpleNamespace:
         author="camper1",  # real praw Redditor objects stringify to the username too
         created_utc=1700000000.0,
         selftext="Sold out the second it went live, so frustrating.",
+        subreddit="CAMPING",  # real praw Subreddit objects stringify to their display name
     )
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
@@ -45,6 +51,14 @@ def test_new_posts_parses_submissions() -> None:
     assert post.permalink == "https://www.reddit.com/r/CAMPING/comments/abc123/title/"
     assert post.author == "camper1"
     assert "Sold out" in post.body_snippet
+
+
+def test_new_posts_uses_submissions_own_subreddit_not_the_query_string() -> None:
+    """A combined query like "CAMPING+Yosemite" isn't a real subreddit name - each
+    post's actual subreddit (from submission.subreddit) must be used instead."""
+    client = RedditClient(_FakeReddit([_submission(subreddit="Yosemite")]))
+    posts = client.new_posts("CAMPING+Yosemite", limit=25)
+    assert posts[0].subreddit == "Yosemite"
 
 
 def test_new_posts_handles_deleted_author() -> None:
@@ -69,3 +83,11 @@ def test_build_reddit_client_uses_praw_with_credentials() -> None:
     settings = Settings(reddit_client_id="id", reddit_client_secret="secret")
     client = build_reddit_client(settings)
     assert isinstance(client, RedditClient)
+
+
+def test_combined_subreddits_joins_with_plus() -> None:
+    assert combined_subreddits(["CAMPING", "Yosemite"]) == "CAMPING+Yosemite"
+
+
+def test_combined_subreddits_excludes_dead_subreddits() -> None:
+    assert combined_subreddits(["CAMPING", "RECREATIONdotgov", "Yosemite"]) == "CAMPING+Yosemite"

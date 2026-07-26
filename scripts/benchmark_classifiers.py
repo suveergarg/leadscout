@@ -29,16 +29,12 @@ from leadscout.classify import OllamaClassifier  # noqa: E402
 from leadscout.config import Settings  # noqa: E402
 from leadscout.keywords import matched_phrase  # noqa: E402
 from leadscout.models import RedditPost  # noqa: E402
-from leadscout.reddit_client import RssRedditClient  # noqa: E402
+from leadscout.reddit_client import RssRedditClient, combined_subreddits  # noqa: E402
 
 DB_PATH = str(Path(__file__).parent.parent / "benchmark.db")
 
-# Confirmed dead (redirects to a search page, not a real subreddit) - excluded so it
-# doesn't break the whole combined request.
-_DEAD_SUBREDDITS = {"RECREATIONdotgov"}
-
-# Reddit's RSS honored this in testing; higher values are untested (a limit=250 attempt
-# hit a coincidental rate limit before confirming either way).
+# Confirmed live: Reddit's RSS caps a response at exactly 100 entries regardless of the
+# limit requested (tested up to 500) or how many subreddits are combined.
 _FETCH_LIMIT = 100
 
 _SCHEMA = """
@@ -62,8 +58,7 @@ CREATE TABLE IF NOT EXISTS classifications (
 
 
 def fetch_and_store(conn: sqlite3.Connection, settings: Settings) -> None:
-    live_subreddits = [s for s in settings.subreddits if s not in _DEAD_SUBREDDITS]
-    combined = "+".join(live_subreddits)
+    combined = combined_subreddits(settings.subreddits)
     client = RssRedditClient(settings.user_agent)
     try:
         posts = client.new_posts(combined, limit=_FETCH_LIMIT)

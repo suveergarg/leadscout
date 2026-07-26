@@ -23,6 +23,22 @@ class RedditFeed(Protocol):
     def close(self) -> None: ...
 
 
+# Confirmed dead (redirects to a search page rather than a real subreddit) - excluded
+# from combined queries since one bad name risks failing the whole request rather than
+# just that one entry.
+DEAD_SUBREDDITS = {"RECREATIONdotgov"}
+
+
+def combined_subreddits(subreddits: list[str]) -> str:
+    """Reddit (both PRAW and RSS) supports r/sub1+sub2+.../new to fetch many subreddits
+    in one request - the same cost as fetching one under RssRedditClient's anonymous
+    rate limit, since the bucket only cares about request count. Each returned post
+    carries its own real subreddit (RedditClient reads submission.subreddit;
+    RssRedditClient reads the entry's <category label="r/...">), not this joined
+    string - it's a query key, not a label."""
+    return "+".join(s for s in subreddits if s not in DEAD_SUBREDDITS)
+
+
 class RedditSource(Protocol):
     """The slice of praw.Reddit's interface RedditClient needs — lets tests inject a fake
     without a real Reddit app or network access."""
@@ -37,12 +53,15 @@ class RedditClient:
         self._reddit = reddit
 
     def new_posts(self, subreddit: str, limit: int = 25) -> list[RedditPost]:
+        # str(submission.subreddit) - not the (possibly "+"-joined multireddit)
+        # `subreddit` argument - gives each post's real source, matching how
+        # RssRedditClient reads <category label="r/...">.
         posts = []
         for submission in self._reddit.subreddit(subreddit).new(limit=limit):
             posts.append(
                 RedditPost(
                     post_id=submission.id,
-                    subreddit=subreddit,
+                    subreddit=str(submission.subreddit),
                     title=submission.title,
                     permalink=f"https://www.reddit.com{submission.permalink}",
                     author=str(submission.author) if submission.author else "[deleted]",

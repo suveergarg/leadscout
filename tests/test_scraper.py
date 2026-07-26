@@ -69,7 +69,11 @@ def test_poll_once_skips_already_seen(settings) -> None:
     assert len(store.list_leads()) == 1
 
 
-def test_poll_once_continues_after_subreddit_fetch_error(settings) -> None:
+def test_poll_once_returns_zero_on_fetch_error(settings) -> None:
+    """poll_once now fetches every subreddit as a single combined request, so a fetch
+    failure means the whole pass returns nothing this cycle - there's no longer a
+    per-subreddit loop to fall back to the next entry in."""
+
     class _FailingClient:
         def new_posts(self, subreddit: str, limit: int = 25) -> list[RedditPost]:
             raise RuntimeError("boom")
