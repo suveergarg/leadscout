@@ -17,6 +17,7 @@ class Store(Protocol):
     def dismiss(self, post_id: str) -> None: ...
     def mark_responded(self, post_id: str) -> None: ...
     def subreddit_stats(self) -> dict[str, dict[str, int]]: ...
+    def update_suggested_reply(self, post_id: str, reply: str) -> None: ...
 
 
 def _ensure_column(conn: sqlite3.Connection, table: str, column: str, coltype: str) -> None:
@@ -112,6 +113,12 @@ class SqliteStore:
 
     def mark_responded(self, post_id: str) -> None:
         self._conn.execute("UPDATE leads SET responded = 1 WHERE post_id = ?", (post_id,))
+        self._conn.commit()
+
+    def update_suggested_reply(self, post_id: str, reply: str) -> None:
+        self._conn.execute(
+            "UPDATE leads SET suggested_reply = ? WHERE post_id = ?", (reply, post_id)
+        )
         self._conn.commit()
 
     def subreddit_stats(self) -> dict[str, dict[str, int]]:

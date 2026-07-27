@@ -6,6 +6,7 @@ import uvicorn
 from leadscout.classify import build_classifier
 from leadscout.config import Settings
 from leadscout.dashboard import create_app
+from leadscout.models import RedditPost
 from leadscout.reddit_client import build_reddit_client
 from leadscout.runner import run_loop
 from leadscout.scraper import poll_once
@@ -32,6 +33,34 @@ def poll_once_cmd() -> None:
         typer.echo(f"{found} new lead(s)")
     finally:
         client.close()
+
+
+@app.command("backfill-replies")
+def backfill_replies() -> None:
+    """Draft a suggested reply for any existing lead that doesn't have one yet - leads
+    stored before suggest_reply() existed, or ones where drafting failed at the time."""
+    settings = Settings()
+    classifier = build_classifier(settings)
+    store = SqliteStore(settings.db_path)
+    leads = [lead for lead in store.list_leads(include_dismissed=True) if not lead.suggested_reply]
+    for lead in leads:
+        post = RedditPost(
+            post_id=lead.post_id,
+            subreddit=lead.subreddit,
+            title=lead.title,
+            permalink=lead.permalink,
+            author=lead.author,
+            created_utc=lead.created_utc,
+            body_snippet=lead.body_snippet,
+        )
+        try:
+            reply = classifier.suggest_reply(post)
+        except Exception as exc:  # noqa: BLE001 - report and move on to the next lead
+            typer.echo(f"failed to draft a reply for {lead.post_id}: {exc}")
+            continue
+        if reply:
+            store.update_suggested_reply(lead.post_id, reply)
+    typer.echo(f"drafted replies for {len(leads)} lead(s)")
 
 
 @app.command()

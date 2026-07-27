@@ -69,6 +69,13 @@ def test_mark_responded(tmp_path) -> None:
     assert store.list_leads()[0].responded is True
 
 
+def test_update_suggested_reply(tmp_path) -> None:
+    store = SqliteStore(str(tmp_path / "leadscout.db"))
+    store.add_lead(_lead())
+    store.update_suggested_reply("abc123", "a backfilled reply")
+    assert store.list_leads()[0].suggested_reply == "a backfilled reply"
+
+
 def test_subreddit_stats_counts_scanned_and_leads(tmp_path) -> None:
     store = SqliteStore(str(tmp_path / "leadscout.db"))
     store.mark_seen("s1", "CAMPING", "t1", 0.1, "reason", "2026-07-25T00:00:00+00:00")
