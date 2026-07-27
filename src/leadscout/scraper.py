@@ -43,6 +43,11 @@ def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, st
                         classification.reason, now)
         if classification.score < settings.min_llm_score:
             continue
+        try:
+            reply = classifier.suggest_reply(post)
+        except Exception as exc:  # noqa: BLE001 - a lead is still worth storing without one
+            print(f"leadscout: failed to draft a suggested reply for {post.post_id}: {exc}")
+            reply = ""
         store.add_lead(
             Lead(
                 **post.model_dump(),
@@ -50,6 +55,7 @@ def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, st
                 llm_score=classification.score,
                 llm_reason=classification.reason,
                 first_seen=now,
+                suggested_reply=reply,
             )
         )
         new_leads += 1

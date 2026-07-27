@@ -31,3 +31,5 @@ class Lead(BaseModel):
     llm_reason: str
     status: str = "new"
     first_seen: str
+    suggested_reply: str = ""
+    responded: bool = False

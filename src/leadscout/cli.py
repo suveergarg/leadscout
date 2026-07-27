@@ -39,7 +39,8 @@ def serve() -> None:
     """Serve the local leads dashboard (127.0.0.1 only)."""
     settings = Settings()
     store = SqliteStore(settings.db_path)
-    uvicorn.run(create_app(store), host=settings.dashboard_host, port=settings.dashboard_port)
+    app_ = create_app(store, subreddits=settings.subreddits)
+    uvicorn.run(app_, host=settings.dashboard_host, port=settings.dashboard_port)
 
 
 if __name__ == "__main__":

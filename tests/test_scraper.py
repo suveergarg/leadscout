@@ -21,6 +21,9 @@ class _FakeClassifier(Classifier):
     def classify(self, post: RedditPost) -> Classification:
         return Classification(score=self._score, reason="fake")
 
+    def suggest_reply(self, post: RedditPost) -> str:
+        return "fake reply"
+
 
 def _post(post_id: str, title: str, body: str = "") -> RedditPost:
     return RedditPost(
@@ -90,6 +93,31 @@ def test_poll_once_never_reclassifies_a_below_threshold_post(settings) -> None:
     poll_once(settings, _FakeClient(posts), classifier, store)
     assert classifier.calls == 1
     assert store.list_leads() == []
+
+
+def test_poll_once_stores_suggested_reply_for_a_lead(settings) -> None:
+    posts = [_post("a6", "Site was sold out in minutes")]
+    store = SqliteStore(settings.db_path)
+    poll_once(settings, _FakeClient(posts), _FakeClassifier(0.9), store)
+    assert store.list_leads()[0].suggested_reply == "fake reply"
+
+
+def test_poll_once_stores_lead_even_if_reply_drafting_fails(settings) -> None:
+    """A reply-drafting failure shouldn't block storing the lead itself - the post is
+    still worth surfacing on the dashboard even with an empty suggested_reply."""
+    posts = [_post("a7", "Site was sold out in minutes")]
+    store = SqliteStore(settings.db_path)
+
+    class _FailingReplyClassifier(Classifier):
+        def classify(self, post: RedditPost) -> Classification:
+            return Classification(score=0.9, reason="fake")
+
+        def suggest_reply(self, post: RedditPost) -> str:
+            raise RuntimeError("boom")
+
+    found = poll_once(settings, _FakeClient(posts), _FailingReplyClassifier(), store)
+    assert found == 1
+    assert store.list_leads()[0].suggested_reply == ""
 
 
 def test_poll_once_returns_zero_on_fetch_error(settings) -> None:

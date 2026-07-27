@@ -6,17 +6,30 @@
   <style>
     body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; color: #222; }
     h1 { font-size: 1.3rem; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; vertical-align: top; }
-    th { font-size: 0.8rem; text-transform: uppercase; color: #666; }
-    .score { font-weight: 600; }
-    .snippet { color: #555; font-size: 0.85rem; }
+    nav { margin-bottom: 1rem; }
+    nav a { margin-right: 1rem; color: #555; text-decoration: none; padding-bottom: 0.25rem; }
+    nav a.active { color: #222; font-weight: 600; border-bottom: 2px solid #222; }
     .toggle { float: right; font-size: 0.85rem; }
+    .card { border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
+    .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+    .subreddit { color: #666; font-size: 0.8rem; text-transform: uppercase; }
+    .score { font-weight: 600; }
+    .snippet { color: #555; font-size: 0.85rem; margin: 0.4rem 0; }
+    .reason { color: #444; font-size: 0.85rem; font-style: italic; }
+    .reply-box { background: #f6f6f6; border-radius: 4px; padding: 0.6rem 0.8rem; margin-top: 0.6rem;
+                 font-size: 0.9rem; white-space: pre-wrap; }
+    .reply-label { font-size: 0.75rem; text-transform: uppercase; color: #888; margin-bottom: 0.3rem; }
+    .actions { margin-top: 0.6rem; display: flex; gap: 0.5rem; align-items: center; }
     button { cursor: pointer; }
+    .responded-badge { color: #2a7a3f; font-size: 0.85rem; font-weight: 600; }
     .empty { color: #888; padding: 2rem 0; }
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/" class="active">leads</a>
+    <a href="/subreddits">subreddits</a>
+  </nav>
   <h1>leadscout — {{ "all leads (incl. dismissed)" if show_dismissed else "new leads" }}
     <a class="toggle" href="/?show_dismissed={{ 0 if show_dismissed else 1 }}">
       {{ "hide dismissed" if show_dismissed else "show dismissed" }}
@@ -25,28 +38,41 @@
   {% if not leads %}
     <p class="empty">No leads yet.</p>
   {% else %}
-  <table>
-    <tr><th>subreddit</th><th>post</th><th>score</th><th>reason</th><th></th></tr>
-    {% for lead in leads %}
-    <tr>
-      <td>r/{{ lead.subreddit }}</td>
-      <td>
-        <a href="{{ lead.permalink }}" target="_blank">{{ lead.title }}</a>
-        <div class="snippet">{{ lead.body_snippet[:200] }}</div>
-      </td>
-      <td class="score">{{ "%.2f"|format(lead.llm_score) }}</td>
-      <td>{{ lead.llm_reason }}</td>
-      <td>
-        {% if lead.status != "dismissed" %}
-        <form method="post" action="/dismiss/{{ lead.post_id }}">
-          <input type="hidden" name="show_dismissed" value="{{ 1 if show_dismissed else 0 }}">
-          <button type="submit">dismiss</button>
-        </form>
-        {% else %}dismissed{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
+  {% for lead in leads %}
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <span class="subreddit">r/{{ lead.subreddit }}</span>
+        <a href="{{ lead.permalink }}" target="_blank"><strong>{{ lead.title }}</strong></a>
+      </div>
+      <span class="score">{{ "%.2f"|format(lead.llm_score) }}</span>
+    </div>
+    <div class="snippet">{{ lead.body_snippet[:200] }}</div>
+    <div class="reason">{{ lead.llm_reason }}</div>
+    {% if lead.suggested_reply %}
+    <div class="reply-box">
+      <div class="reply-label">suggested reply</div>
+      {{ lead.suggested_reply }}
+    </div>
+    {% endif %}
+    <div class="actions">
+      {% if lead.status != "dismissed" %}
+      <form method="post" action="/dismiss/{{ lead.post_id }}">
+        <input type="hidden" name="show_dismissed" value="{{ 1 if show_dismissed else 0 }}">
+        <button type="submit">dismiss</button>
+      </form>
+      {% else %}<span>dismissed</span>{% endif %}
+      {% if lead.responded %}
+        <span class="responded-badge">✓ responded</span>
+      {% else %}
+      <form method="post" action="/responded/{{ lead.post_id }}">
+        <input type="hidden" name="show_dismissed" value="{{ 1 if show_dismissed else 0 }}">
+        <button type="submit">mark responded</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
   {% endif %}
 </body>
 </html>

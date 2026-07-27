@@ -15,6 +15,16 @@ class Store(Protocol):
     def add_lead(self, lead: Lead) -> None: ...
     def list_leads(self, include_dismissed: bool = False) -> list[Lead]: ...
     def dismiss(self, post_id: str) -> None: ...
+    def mark_responded(self, post_id: str) -> None: ...
+    def subreddit_stats(self) -> dict[str, dict[str, int]]: ...
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, coltype: str) -> None:
+    """Additive schema migration - a fresh CREATE TABLE IF NOT EXISTS never reaches an
+    already-existing db file, so new Lead fields need an explicit ALTER TABLE."""
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
 
 
 class SqliteStore:
@@ -40,6 +50,8 @@ class SqliteStore:
             );
             """
         )
+        _ensure_column(self._conn, "leads", "suggested_reply", "TEXT NOT NULL DEFAULT ''")
+        _ensure_column(self._conn, "leads", "responded", "INTEGER NOT NULL DEFAULT 0")
         self._conn.commit()
 
     def seen(self, post_id: str) -> bool:
@@ -67,8 +79,9 @@ class SqliteStore:
             """
             INSERT OR IGNORE INTO leads
                 (post_id, subreddit, title, permalink, author, created_utc, body_snippet,
-                 keyword_matched, llm_score, llm_reason, status, first_seen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 keyword_matched, llm_score, llm_reason, status, first_seen, suggested_reply,
+                 responded)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 lead.post_id,
@@ -83,6 +96,8 @@ class SqliteStore:
                 lead.llm_reason,
                 lead.status,
                 lead.first_seen,
+                lead.suggested_reply,
+                int(lead.responded),
             ),
         )
         self._conn.commit()
@@ -94,6 +109,24 @@ class SqliteStore:
         query += " ORDER BY created_utc DESC"
         rows = self._conn.execute(query).fetchall()
         return [Lead(**dict(row)) for row in rows]
+
+    def mark_responded(self, post_id: str) -> None:
+        self._conn.execute("UPDATE leads SET responded = 1 WHERE post_id = ?", (post_id,))
+        self._conn.commit()
+
+    def subreddit_stats(self) -> dict[str, dict[str, int]]:
+        """{subreddit: {"scanned": N, "leads": M}} for every subreddit with at least one
+        scanned post or lead recorded - callers merge in monitored-but-quiet subreddits."""
+        stats: dict[str, dict[str, int]] = {}
+        for sub, count in self._conn.execute(
+            "SELECT subreddit, COUNT(*) FROM seen_posts GROUP BY subreddit"
+        ).fetchall():
+            stats.setdefault(sub, {"scanned": 0, "leads": 0})["scanned"] = count
+        for sub, count in self._conn.execute(
+            "SELECT subreddit, COUNT(*) FROM leads GROUP BY subreddit"
+        ).fetchall():
+            stats.setdefault(sub, {"scanned": 0, "leads": 0})["leads"] = count
+        return stats
 
     def dismiss(self, post_id: str) -> None:
         self._conn.execute("UPDATE leads SET status = 'dismissed' WHERE post_id = ?", (post_id,))

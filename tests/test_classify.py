@@ -27,3 +27,7 @@ def test_build_classifier_falls_back_to_keyword_only_with_no_backend() -> None:
     settings = Settings(ollama_url=None, anthropic_api_key=None)
     classifier = build_classifier(settings)
     assert isinstance(classifier, KeywordOnlyClassifier)
+
+
+def test_keyword_only_classifier_has_no_reply_to_suggest() -> None:
+    assert KeywordOnlyClassifier().suggest_reply(_post()) == ""

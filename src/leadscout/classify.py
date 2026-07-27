@@ -17,9 +17,21 @@ questions, or unrelated content.
 
 Return score (0.0-1.0, how strong the signal is) and reason (one short sentence why)."""
 
+_REPLY_SYSTEM = """You draft a short, genuine Reddit reply for someone building availwatch, a
+tool that alerts people the moment a sold-out campsite/permit/timed-entry slot opens up.
+
+Given a post where the author is frustrated with hunting for availability, write a brief,
+natural reply (2-4 sentences): acknowledge their specific situation, then mention availwatch as
+something that might help - phrased like a fellow camper/hiker who happens to know about a tool,
+never like an ad or sales pitch. No links, no "check out my product", no exclamation-heavy
+enthusiasm, no emoji. If the post barely warrants a reply, keep it short and low-key.
+
+Return only the reply text, nothing else - no preamble, no quotes around it."""
+
 
 class Classifier(Protocol):
     def classify(self, post: RedditPost) -> Classification: ...
+    def suggest_reply(self, post: RedditPost) -> str: ...
 
 
 def _prompt(post: RedditPost) -> str:
@@ -55,6 +67,20 @@ class OllamaClassifier:
         content = resp.json()["message"]["content"]
         return Classification.model_validate_json(_extract_json(content))
 
+    def suggest_reply(self, post: RedditPost) -> str:
+        payload = {
+            "model": self._model,
+            "stream": False,
+            "messages": [
+                {"role": "system", "content": _REPLY_SYSTEM},
+                {"role": "user", "content": _prompt(post)},
+            ],
+            "options": {"temperature": 0.4},
+        }
+        resp = httpx.post(f"{self._base_url}/api/chat", json=payload, timeout=120)
+        resp.raise_for_status()
+        return resp.json()["message"]["content"].strip()
+
 
 class ClaudeClassifier:
     def __init__(self, client: Any, model: str) -> None:
@@ -71,6 +97,15 @@ class ClaudeClassifier:
         )
         return resp.parsed_output
 
+    def suggest_reply(self, post: RedditPost) -> str:
+        resp = self._client.messages.create(
+            model=self._model,
+            max_tokens=300,
+            system=_REPLY_SYSTEM,
+            messages=[{"role": "user", "content": _prompt(post)}],
+        )
+        return next((b.text for b in resp.content if b.type == "text"), "").strip()
+
 
 class KeywordOnlyClassifier:
     """No LLM backend configured — every keyword-matched post scores a flat mid-confidence
@@ -80,6 +115,9 @@ class KeywordOnlyClassifier:
 
     def classify(self, post: RedditPost) -> Classification:  # noqa: ARG002
         return Classification(score=self._SCORE, reason="keyword match only (no LLM backend)")
+
+    def suggest_reply(self, post: RedditPost) -> str:  # noqa: ARG002
+        return ""  # no LLM backend to draft a genuine reply with
 
 
 def build_classifier(settings: Settings) -> Classifier:
