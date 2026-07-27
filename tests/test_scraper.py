@@ -69,6 +69,29 @@ def test_poll_once_skips_already_seen(settings) -> None:
     assert len(store.list_leads()) == 1
 
 
+def test_poll_once_never_reclassifies_a_below_threshold_post(settings) -> None:
+    """The actual bug: a post that never becomes a lead used to be reclassified on every
+    poll cycle it stayed in Reddit's `new` listing, since only leads were marked "seen".
+    A second pass over the same non-lead post must not call the classifier again."""
+    posts = [_post("a5", "Best tent for winter camping?")]
+    store = SqliteStore(settings.db_path)
+
+    class _CountingClassifier(Classifier):
+        def __init__(self, score: float) -> None:
+            self._score = score
+            self.calls = 0
+
+        def classify(self, post: RedditPost) -> Classification:
+            self.calls += 1
+            return Classification(score=self._score, reason="fake")
+
+    classifier = _CountingClassifier(0.1)
+    poll_once(settings, _FakeClient(posts), classifier, store)
+    poll_once(settings, _FakeClient(posts), classifier, store)
+    assert classifier.calls == 1
+    assert store.list_leads() == []
+
+
 def test_poll_once_returns_zero_on_fetch_error(settings) -> None:
     """poll_once now fetches every subreddit as a single combined request, so a fetch
     failure means the whole pass returns nothing this cycle - there's no longer a

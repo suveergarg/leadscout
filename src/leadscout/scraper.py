@@ -19,7 +19,12 @@ def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, st
 
     No keyword pre-filter: every unseen post is classified directly. matched_phrase()
     is still recorded on the lead (may be None) for comparison against the old
-    keyword-gated behavior, not used to skip classification."""
+    keyword-gated behavior, not used to skip classification.
+
+    Every classified post - lead or not - is recorded via store.mark_seen() so a later
+    poll (the same post can stay in Reddit's `new` listing for several cycles) never
+    reclassifies it. store.seen() checks that record, not the leads table, so a
+    below-threshold post is graded exactly once, not every cycle it remains "new"."""
     combined = combined_subreddits(settings.subreddits)
     try:
         posts = client.new_posts(combined, limit=settings.fetch_limit)
@@ -33,6 +38,9 @@ def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, st
             continue
         phrase = matched_phrase(post.title, post.body_snippet)
         classification = classifier.classify(post)
+        now = datetime.now(timezone.utc).isoformat()
+        store.mark_seen(post.post_id, post.subreddit, post.title, classification.score,
+                        classification.reason, now)
         if classification.score < settings.min_llm_score:
             continue
         store.add_lead(
@@ -41,7 +49,7 @@ def poll_once(settings: Settings, client: RedditFeed, classifier: Classifier, st
                 keyword_matched=phrase,
                 llm_score=classification.score,
                 llm_reason=classification.reason,
-                first_seen=datetime.now(timezone.utc).isoformat(),
+                first_seen=now,
             )
         )
         new_leads += 1

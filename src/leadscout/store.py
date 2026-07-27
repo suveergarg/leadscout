@@ -8,6 +8,10 @@ from leadscout.models import Lead
 
 class Store(Protocol):
     def seen(self, post_id: str) -> bool: ...
+    def mark_seen(
+        self, post_id: str, subreddit: str, title: str, llm_score: float, llm_reason: str,
+        classified_at: str,
+    ) -> None: ...
     def add_lead(self, lead: Lead) -> None: ...
     def list_leads(self, include_dismissed: bool = False) -> list[Lead]: ...
     def dismiss(self, post_id: str) -> None: ...
@@ -27,13 +31,36 @@ class SqliteStore:
                 llm_score REAL, llm_reason TEXT, status TEXT NOT NULL DEFAULT 'new',
                 first_seen TEXT
             );
+            -- Every post the LLM has ever classified, lead or not - `seen` checks this, not
+            -- `leads`, so a post that scored below threshold is never reclassified on a later
+            -- poll just because it's still in Reddit's `new` listing.
+            CREATE TABLE IF NOT EXISTS seen_posts (
+                post_id TEXT PRIMARY KEY, subreddit TEXT, title TEXT,
+                llm_score REAL, llm_reason TEXT, classified_at TEXT
+            );
             """
         )
         self._conn.commit()
 
     def seen(self, post_id: str) -> bool:
-        row = self._conn.execute("SELECT 1 FROM leads WHERE post_id = ?", (post_id,)).fetchone()
+        row = self._conn.execute(
+            "SELECT 1 FROM seen_posts WHERE post_id = ?", (post_id,)
+        ).fetchone()
         return row is not None
+
+    def mark_seen(
+        self, post_id: str, subreddit: str, title: str, llm_score: float, llm_reason: str,
+        classified_at: str,
+    ) -> None:
+        self._conn.execute(
+            """
+            INSERT OR IGNORE INTO seen_posts
+                (post_id, subreddit, title, llm_score, llm_reason, classified_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (post_id, subreddit, title, llm_score, llm_reason, classified_at),
+        )
+        self._conn.commit()
 
     def add_lead(self, lead: Lead) -> None:
         self._conn.execute(
