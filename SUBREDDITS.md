@@ -1,76 +1,93 @@
 # Subreddits — reference for revisiting
 
 The full `DEFAULT_SUBREDDITS` list in `src/leadscout/config.py`, with how each entry was
-found and its post count in the benchmark corpus so far (`benchmark.db`, still growing as
-the deep-history sweep continues — see `scripts/benchmark_classifiers.py`).
+found and its post count in the benchmark corpus so far (`benchmark.db`, 6,342 posts as
+of this writing across 42 subreddits with confirmed activity — see
+`scripts/benchmark_classifiers.py`).
+
+**Leads found so far: 5**, all via Ollama (`qwen2.5:14b`) with a 0.4 score threshold:
+
+| Post | Subreddit | Score | Note |
+|---|---|---|---|
+| "Ticket system is atrocious" | GlacierNationalPark | 0.80 | Repeated failed attempts at a timed-entry ticket system |
+| "Fern canyon permit rage" | redwoods | 0.90 | Years of failed permit attempts, textbook lead |
+| "Fern Canyon 7/30 or 7/31" | redwoods | 0.70 | Missed a permit, hitchhiking in on someone else's |
+| "Reservation.gov site errors" | camping | 0.70 | Got an availability alert, checkout kept erroring |
+| "Jedediah Smith Campground" | redwoods | 0.50 | Proactively worried about sites filling fast |
+
+**Key finding**: `r/redwoods` alone produced 3 of the 5 leads (Fern Canyon's permit
+system is notoriously hard to get) — specific single-destination/permit-hotspot
+subreddits are the highest-value category found so far, better than general
+camping/hiking subs by a wide margin per-post.
 
 ## Original list
 
-| Subreddit | Status | Posts in benchmark so far |
+| Subreddit | Status | Posts so far |
 |---|---|---|
 | CAMPING | live | 25 |
-| RECREATIONdotgov | **dead** — confirmed via clean 302 redirect to a search page, not rate-limiting. Left in the config but contributes nothing; harmless since dead names are silently dropped from combined queries. | 0 |
-| Yosemite | live | 143 |
-| glamping | live | 2 (labeled `Glamping` in RSS) |
-| vandwellers | live | 364 |
-| GlacierNationalPark | live | 126 |
-| nationalparks | live | 145 |
-| CampingandHiking | live | 675 |
-| RVLiving | live | 192 |
-| backpacking | live | 525 |
+| RECREATIONdotgov | **dead** — confirmed via clean 302 redirect, not rate-limiting | 0 |
+| Yosemite | live | 203 |
+| glamping | live | 2 (labeled `Glamping`) |
+| vandwellers | live | 407 |
+| GlacierNationalPark | live | 199 |
+| nationalparks | live | 188 |
+| CampingandHiking | live | 701 |
+| RVLiving | live | 316 |
+| backpacking | live | 656 |
 
-## Round 1 additions — verified live (real posts confirmed under the name)
+## Round 1 — verified live
 
-| Subreddit | Posts so far |
-|---|---|
-| hiking | 739 |
-| AppalachianTrail | 33 |
-| carcamping | 25 |
-| JoshuaTree | 22 |
-| overlanding | 65 |
-| PacificCrestTrail | 18 |
-| Ultralight | 49 |
-| VanLife | 147 |
-| WildernessBackpacking | 116 |
-| yellowstone | 93 |
-| grandcanyon | 36 |
-| JMT | 15 |
+hiking (932), AppalachianTrail (54), carcamping (49), JoshuaTree (31), overlanding (104),
+PacificCrestTrail (39), Ultralight (96), VanLife (249), WildernessBackpacking (158),
+yellowstone (161), grandcanyon (50), JMT (28)
 
-## Round 2 additions — verified live
+## Round 2 — verified live
 
-| Subreddit | Posts so far |
-|---|---|
-| CampingGear | 13 |
-| CDT | 0 so far (confirmed real when first tested; hasn't surfaced again yet) |
-| DeathValleyNP | 1 |
-| GreatSmokyMountains | 0 so far (confirmed real when first tested) |
-| hammockcamping | 3 |
-| OlympicNationalPark | 6 |
-| Sequoia | 0 so far (confirmed real when first tested) |
-| Thruhiking | 0 so far (confirmed real when first tested — note lowercase "h", not "ThruHiking") |
+CampingGear (135), CDT (8), DeathValleyNP (12), GreatSmokyMountains (3),
+hammockcamping (62), OlympicNationalPark (72), Sequoia (1), Thruhiking (14),
+BryceCanyon (3), havasupai (2)
 
-## Round 2 additions — NOT yet cleanly verified
+**Still not confirmed either way** (three sweeps now): Zion, RockyMountainNP, Acadia,
+Arches, MountRainier, BackpackingLight, skoolie, BoondockersWelcome, solocamping,
+Enchantments. Harmless if wrong (dead names are silently absent from combined
+results); worth an isolated retest sometime, or just wait and see if the continuous
+overnight loop ever surfaces posts from them.
 
-A test batch got crowded out by higher-volume subs before the rate limit blocked a clean
-retest. Harmless either way (a dead name is silently absent from combined results,
-confirmed with RECREATIONdotgov) — whether these are real will show up as their post
-count in future sweeps. None had shown up as of this writing:
+## Round 3 — verified live
 
-Zion, RockyMountainNP, Acadia, Arches, BryceCanyon, MountRainier, BackpackingLight,
-skoolie, BoondockersWelcome, solocamping, Havasupai, Enchantments.
+bikepacking (242), coloradotrail (18), Everglades (7), longtrail (6), **redwoods (13,
+but 3 of our 5 total leads)**, TahoeRimTrail (7), WinterCamping (4), Canyonlands (1),
+shenandoah (1), tentcamping (1)
 
-If revisiting: test these on their own (not mixed with a dominant sub like CampingGear)
-to get a clean read, or just watch whether they ever contribute posts in a benchmark run.
+**Still not confirmed**: Denali, Voyageurs, Congaree, Badlands, CapitolReef, MesaVerde.
+
+## Round 4 — verified live
+
+Specific hard-to-get-permit destinations, added after r/redwoods proved that pattern
+valuable: KalalauTrail, mtwhitney, thewave, wonderlandtrail (all low-volume/niche,
+~20 posts total across all four in one combined test - narrow but real communities).
+
+## Round 5 — NOT yet live-verified
+
+Rate limit was fully saturated when these were added (tonight's sustained heavy usage
+closed the anonymous bucket for extended periods) - same reasoning as round 4, more
+specific permit-hotspot destinations: NorthCascades, KingsCanyon, GrandTeton,
+MaroonBells, Sawtooth, WindRiverRange, SanJuanMountains, AngelsLanding.
 
 ## Notes for later
 
 - **How to verify a candidate**: fetch `reddit.com/r/candidate1+candidate2+.../new/.rss?limit=100`
-  and check which `<category label="r/...">` values appear in the response. A name that
-  never appears across several attempts (and isn't obviously being crowded out by a
-  much larger sub in the same query) is likely dead or nonexistent.
-- **Rate limit**: the anonymous RSS bucket is shared across all requests from this IP
-  (this session's own manual `curl` testing has repeatedly exhausted it) — space out
-  verification requests, or just let a real sweep (which already throttles correctly
-  based on live headers) settle it.
+  and check which `<category label="r/...">` values appear. A name that never appears
+  across several attempts (and isn't obviously crowded out by a much larger sub in the
+  same query) is likely dead or nonexistent.
+- **Rate limit gets *harder* under sustained use, not just per-request.** Early tonight,
+  `new` + `top/all` both succeeded per sweep; after ~2 hours of continuous heavy use,
+  even `new` started returning almost nothing and `top/all` 429'd immediately. This
+  looks like a longer soft-throttle beyond the simple per-response
+  `x-ratelimit-reset` window - budget real cooldown time (hours, not minutes) between
+  big sweeps.
+- **Highest-value subreddit category**: specific single-destination/permit-hotspot subs
+  (redwoods/Fern Canyon, GlacierNationalPark's ticket system) rather than general
+  camping/hiking subs - worth prioritizing this pattern when adding more candidates.
 - **Combining bad names is safe**: a dead/nonexistent subreddit mixed into a combined
-  query doesn't break the whole request — confirmed live, it's just silently absent.
+  query doesn't break the whole request - confirmed live, it's just silently absent.
