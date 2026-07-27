@@ -80,6 +80,18 @@ DEFAULT_SUBREDDITS = [
     "mtwhitney",
     "thewave",
     "wonderlandtrail",
+    # Round 5 - not live-verified (rate limit was too tight tonight for a clean test);
+    # same reasoning as round 4, more specific hard-to-get-permit destinations. Harmless
+    # if wrong; the overnight continuous loop's repeated polling will settle which are
+    # real via actual post counts, same as every prior round.
+    "NorthCascades",
+    "KingsCanyon",
+    "GrandTeton",
+    "MaroonBells",
+    "Sawtooth",
+    "WindRiverRange",
+    "SanJuanMountains",
+    "AngelsLanding",
 ]
 
 
