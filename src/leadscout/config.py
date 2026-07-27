@@ -36,24 +36,42 @@ DEFAULT_SUBREDDITS = [
     "OlympicNationalPark",
     "Sequoia",
     "Thruhiking",
-    # Not yet cleanly verified (dominant subs in the test batch crowded them out, or the
-    # rate limit blocked a clean retest) - harmless if wrong (a dead name is silently
-    # absent from combined results, confirmed earlier), and their contribution in real
-    # sweeps will settle it: Zion, RockyMountainNP, Acadia, Arches, BryceCanyon,
-    # MountRainier, BackpackingLight, skoolie, BoondockersWelcome, solocamping,
-    # Havasupai, Enchantments.
+    # Round 2 candidates confirmed live via real benchmark-sweep post counts (not a
+    # direct verification query, but genuine posts turned up under these names):
+    "BryceCanyon",
+    "havasupai",
+    # Round 2 candidates still not confirmed either way after two sweeps - harmless if
+    # wrong (a dead name is silently absent from combined results, confirmed earlier):
+    # Zion, RockyMountainNP, Acadia, Arches, MountRainier, BackpackingLight, skoolie,
+    # BoondockersWelcome, solocamping, Enchantments.
     "Zion",
     "RockyMountainNP",
     "Acadia",
     "Arches",
-    "BryceCanyon",
     "MountRainier",
     "BackpackingLight",
     "skoolie",
     "BoondockersWelcome",
     "solocamping",
-    "Havasupai",
     "Enchantments",
+    # Round 3 additions - verified live:
+    "bikepacking",
+    "coloradotrail",
+    "Everglades",
+    "longtrail",
+    "redwoods",
+    "TahoeRimTrail",
+    "WinterCamping",
+    # Round 3 candidates not yet cleanly verified (rate-limited before a clean retest):
+    "Denali",
+    "Shenandoah",
+    "Voyageurs",
+    "Congaree",
+    "Badlands",
+    "CapitolReef",
+    "Canyonlands",
+    "MesaVerde",
+    "tentcamping",
 ]
 
 
