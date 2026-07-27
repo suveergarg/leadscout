@@ -27,6 +27,33 @@ DEFAULT_SUBREDDITS = [
     "yellowstone",
     "grandcanyon",
     "JMT",
+    # Verified live in a second round:
+    "CampingGear",
+    "CDT",
+    "DeathValleyNP",
+    "GreatSmokyMountains",
+    "hammockcamping",
+    "OlympicNationalPark",
+    "Sequoia",
+    "Thruhiking",
+    # Not yet cleanly verified (dominant subs in the test batch crowded them out, or the
+    # rate limit blocked a clean retest) - harmless if wrong (a dead name is silently
+    # absent from combined results, confirmed earlier), and their contribution in real
+    # sweeps will settle it: Zion, RockyMountainNP, Acadia, Arches, BryceCanyon,
+    # MountRainier, BackpackingLight, skoolie, BoondockersWelcome, solocamping,
+    # Havasupai, Enchantments.
+    "Zion",
+    "RockyMountainNP",
+    "Acadia",
+    "Arches",
+    "BryceCanyon",
+    "MountRainier",
+    "BackpackingLight",
+    "skoolie",
+    "BoondockersWelcome",
+    "solocamping",
+    "Havasupai",
+    "Enchantments",
 ]
 
 
