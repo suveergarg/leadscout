@@ -62,16 +62,24 @@ DEFAULT_SUBREDDITS = [
     "redwoods",
     "TahoeRimTrail",
     "WinterCamping",
-    # Round 3 candidates not yet cleanly verified (rate-limited before a clean retest):
+    # Round 3 candidates confirmed live via real benchmark-sweep post counts:
+    "Canyonlands",
+    "shenandoah",
+    "tentcamping",
+    # Round 3 candidates still not confirmed either way (rate-limited before a clean
+    # isolated retest): Denali, Voyageurs, Congaree, Badlands, CapitolReef, MesaVerde.
     "Denali",
-    "Shenandoah",
     "Voyageurs",
     "Congaree",
     "Badlands",
     "CapitolReef",
-    "Canyonlands",
     "MesaVerde",
-    "tentcamping",
+    # Round 4 additions - verified live. Specific hard-to-get-a-permit destinations
+    # (following r/redwoods turning up 3 real leads about Fern Canyon permit rage):
+    "KalalauTrail",
+    "mtwhitney",
+    "thewave",
+    "wonderlandtrail",
 ]
 
 
